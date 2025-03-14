@@ -95,7 +95,7 @@ app.get('/', (req, res) => {
   }
 });
 
-app.post('/update-profile', async (req, res) => {
+app.get('/update-profile', async (req, res) => {
   if (!req.session.access_token || !req.session.access_token_secret) return res.redirect('/');
 
   try {
