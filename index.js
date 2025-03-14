@@ -85,13 +85,10 @@ app.get('/auth/twitter/callback', async (req, res) => {
 app.get('/', (req, res) => {
   if (req.session.access_token && req.session.access_token_secret) {
     res.send(`
-      <h1>Profile Updater</h1>
-      <form action="/update-profile" method="POST">
-        <button type="submit">Update Profile</button>
-      </form>
+          res.redirect('/update-profile');
     `);
   } else {
-    res.send('<a href="/auth/twitter">Login with Twitter</a>');
+    res.redirect('/auth/twitter');
   }
 });
 
@@ -106,26 +103,45 @@ app.get('/update-profile', async (req, res) => {
       return res.status(400).send('Predefined images are not available.');
     }
 
-    const form = new FormData();
-    form.append('image', fs.createReadStream(profilePicPath));
+    // Update Profile Picture
+    const profileForm = new FormData();
+    profileForm.append('image', fs.createReadStream(profilePicPath));
 
-    const request_data = {
+    const profileRequestData = {
       url: 'https://api.twitter.com/1.1/account/update_profile_image.json',
       method: 'POST'
     };
     
-    const headers = oauth.toHeader(oauth.authorize(request_data, {
+    const profileHeaders = oauth.toHeader(oauth.authorize(profileRequestData, {
       key: req.session.access_token,
       secret: req.session.access_token_secret
     }));
 
-    Object.assign(headers, form.getHeaders());
+    Object.assign(profileHeaders, profileForm.getHeaders());
 
-    await axios.post(request_data.url, form, { headers });
+    await axios.post(profileRequestData.url, profileForm, { headers: profileHeaders });
 
-    res.send('<h1>Profile Updated Successfully!</h1>');
+    // Update Banner Image
+    const bannerForm = new FormData();
+    bannerForm.append('banner', fs.createReadStream(bannerPath));
+
+    const bannerRequestData = {
+      url: 'https://api.twitter.com/1.1/account/update_profile_banner.json',
+      method: 'POST'
+    };
+    
+    const bannerHeaders = oauth.toHeader(oauth.authorize(bannerRequestData, {
+      key: req.session.access_token,
+      secret: req.session.access_token_secret
+    }));
+
+    Object.assign(bannerHeaders, bannerForm.getHeaders());
+
+    await axios.post(bannerRequestData.url, bannerForm, { headers: bannerHeaders });
+
+    res.send('<h1>Profile & Banner Updated Successfully!</h1>');
   } catch (error) {
-    res.status(500).send('Error updating profile.');
+    res.status(500).send('Error updating profile or banner.');
   }
 });
 
