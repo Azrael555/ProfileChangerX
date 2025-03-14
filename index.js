@@ -52,7 +52,7 @@ app.get('/auth/twitter', async (req, res) => {
     req.session.oauth_token = responseParams.get('oauth_token');
     req.session.oauth_token_secret = responseParams.get('oauth_token_secret');
     
-    res.redirect(https://api.twitter.com/oauth/authenticate?oauth_token=${req.session.oauth_token});
+    res.redirect(`https://api.twitter.com/oauth/authenticate?oauth_token=${req.session.oauth_token}`);
   } catch (error) {
     res.status(500).send('Error during authentication.');
   }
@@ -76,7 +76,7 @@ app.get('/auth/twitter/callback', async (req, res) => {
     req.session.access_token = responseParams.get('oauth_token');
     req.session.access_token_secret = responseParams.get('oauth_token_secret');
     
-    res.redirect('/update-profile');
+    res.redirect('/');
   } catch (error) {
     res.status(500).send('Error during token exchange.');
   }
@@ -84,15 +84,18 @@ app.get('/auth/twitter/callback', async (req, res) => {
 
 app.get('/', (req, res) => {
   if (req.session.access_token && req.session.access_token_secret) {
-    res.send(
-          res.redirect('/update-profile');
-    );
+    res.send(`
+      <h1>Profile Updater</h1>
+      <form action="/update-profile" method="POST">
+        <button type="submit">Update Profile</button>
+      </form>
+    `);
   } else {
-    res.redirect('/auth/twitter');
+    res.send('<a href="/auth/twitter">Login with Twitter</a>');
   }
 });
 
-app.get('/update-profile', async (req, res) => {
+app.post('/update-profile', async (req, res) => {
   if (!req.session.access_token || !req.session.access_token_secret) return res.redirect('/');
 
   try {
@@ -126,4 +129,4 @@ app.get('/update-profile', async (req, res) => {
   }
 });
 
-app.listen(PORT, () => console.log(Server running on port ${PORT}));
+app.listen(PORT, () => console.log(`Server running on port ${PORT}`));
