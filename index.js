@@ -4,8 +4,6 @@ const session = require('express-session');
 const passport = require('passport');
 const TwitterStrategy = require('passport-twitter').Strategy;
 const axios = require('axios');
-const fs = require('fs');
-const path = require('path');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -66,17 +64,16 @@ app.post('/change-profile', async (req, res) => {
     const { token, tokenSecret } = req.user;
 
     try {
-        // Example PFP and Banner images (You can replace these with your own URLs or files)
-       const pfpImagePath = path.join(__dirname, 'public', 'pfp.jpg');
-       const bannerImagePath = path.join(__dirname, 'public', 'banner.jpg');
+        // Replace with your image URLs
+        const pfpUrl = 'https://i.ibb.co/ZRFrnm0z/zen.png';  // Replace this with your PFP image URL
+        const bannerUrl = 'https://i.ibb.co/Xr8GQLzB/magenta-nature-fantasy-landscape-23-2150693731.jpg';  // Replace this with your Banner image URL
 
-        // Read the images
-        const pfpImage = fs.readFileSync(pfpImagePath);
-        const bannerImage = fs.readFileSync(bannerImagePath);
+        // Fetch images and convert to base64
+        const pfpImageResponse = await axios.get(pfpUrl, { responseType: 'arraybuffer' });
+        const bannerImageResponse = await axios.get(bannerUrl, { responseType: 'arraybuffer' });
 
-        // Convert images to base64
-        const pfpBase64 = pfpImage.toString('base64');
-        const bannerBase64 = bannerImage.toString('base64');
+        const pfpBase64 = Buffer.from(pfpImageResponse.data).toString('base64');
+        const bannerBase64 = Buffer.from(bannerImageResponse.data).toString('base64');
 
         // Update Profile Picture
         await axios.post('https://api.twitter.com/1.1/account/update_profile_image.json', {
