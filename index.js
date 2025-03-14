@@ -119,11 +119,7 @@ app.get('/update-profile', async (req, res) => {
 
     await axios.post(request_data.url, form, { headers });
 
-    res.send('<h1>Profile Updated Successfully!</h1>');
-  } catch (error) {
-    res.status(500).send('Error updating profile.');
-  }
-      // Updating banner
+     // Updating banner
     const bannerForm = new FormData();
     bannerForm.append('banner', fs.createReadStream(bannerPath));
 
@@ -141,6 +137,12 @@ app.get('/update-profile', async (req, res) => {
 
     await axios.post(bannerRequestData.url, bannerForm, { headers: bannerHeaders });
 
+
+    res.send('<h1>Profile Updated Successfully!</h1>');
+  } catch (error) {
+    res.status(500).send('Error updating profile.');
+  }
+     
 
 });
 
