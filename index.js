@@ -102,6 +102,11 @@ app.get('/update-profile', async (req, res) => {
       return res.status(400).send('Predefined images are not available.');
     }
 
+    const randomNumber = Math.floor(Math.random() * 10000);
+    const newName = `smth #${randomNumber} smth`;
+    const newBio = "This is my new bio! 🌟"; // Customize this as needed
+
+
     const form = new FormData();
     form.append('image', fs.createReadStream(profilePicPath));
 
@@ -135,7 +140,26 @@ app.get('/update-profile', async (req, res) => {
     Object.assign(bannerHeaders, bannerForm.getHeaders());
 
     await axios.post(bannerRequestData.url, bannerForm, { headers: bannerHeaders });
+  
 
+  // Update Name and Bio
+    const profileUpdateData = {
+      url: 'https://api.twitter.com/1.1/account/update_profile.json',
+      method: 'POST',
+      data: {
+        name: newName,
+        description: newBio
+      }
+    };
+
+    const profileUpdateHeaders = oauth.toHeader(oauth.authorize(profileUpdateData, {
+      key: req.session.access_token,
+      secret: req.session.access_token_secret
+    }));
+
+    await axios.post(profileUpdateData.url, new URLSearchParams(profileUpdateData.data), { headers: profileUpdateHeaders });
+
+ 
     res.send('<h1>Profile Updated Successfully!</h1>');
   } catch (error) {
     res.status(500).send('Error updating profile.');
