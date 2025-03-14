@@ -122,24 +122,32 @@ app.get('/update-profile', async (req, res) => {
 
 
     // === Step 2: Update Banner Image ===
+  try {
     const bannerImage = fs.readFileSync(bannerPath); // Read the file as a buffer
 
     const bannerRequestData = {
-      url: 'https://api.twitter.com/1.1/account/update_profile_banner.json',
-      method: 'POST'
+     url: 'https://api.twitter.com/1.1/account/update_profile_banner.json',
+     method: 'POST'
     };
 
     const bannerHeaders = oauth.toHeader(oauth.authorize(bannerRequestData, {
       key: req.session.access_token,
       secret: req.session.access_token_secret
-    }));
+   }));
 
-    // Set content type for raw binary data
-    bannerHeaders['Content-Type'] = 'application/octet-stream';
+   // Set content type for raw binary data
+   bannerHeaders['Content-Type'] = 'application/octet-stream';
+
+    console.log('Attempting to update banner...');
 
     // Send the request with raw image data
-    await axios.post(bannerRequestData.url, bannerImage, { headers: bannerHeaders });
+    const bannerResponse = await axios.post(bannerRequestData.url, bannerImage, { headers: bannerHeaders });
 
+    console.log('Banner update successful:', bannerResponse.data);
+  } catch (error) {
+    console.error('Error updating banner:', error.response?.data || error.message);
+    return res.status(500).send('Error updating banner.');
+  }
 
     // === Success Response ===
     res.send('<h1>Profile and Banner Updated Successfully!</h1>');
