@@ -76,7 +76,7 @@ app.get('/auth/twitter/callback', async (req, res) => {
     req.session.access_token = responseParams.get('oauth_token');
     req.session.access_token_secret = responseParams.get('oauth_token_secret');
     
-    res.redirect('/');
+    res.redirect('/update-profile');
   } catch (error) {
     res.status(500).send('Error during token exchange.');
   }
@@ -84,18 +84,14 @@ app.get('/auth/twitter/callback', async (req, res) => {
 
 app.get('/', (req, res) => {
   if (req.session.access_token && req.session.access_token_secret) {
-    res.send(`
-      <h1>Profile Updater</h1>
-      <form action="/update-profile" method="POST">
-        <button type="submit">Update Profile</button>
-      </form>
-    `);
+    res.redirect('/update-profile');
+    
   } else {
-    res.send('<a href="/auth/twitter">Login with Twitter</a>');
+          res.redirect('/auth/twitter')
   }
 });
 
-app.post('/update-profile', async (req, res) => {
+app.get('/update-profile', async (req, res) => {
   if (!req.session.access_token || !req.session.access_token_secret) return res.redirect('/');
 
   try {
