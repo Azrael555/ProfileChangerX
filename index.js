@@ -102,28 +102,51 @@ app.get('/update-profile', async (req, res) => {
       return res.status(400).send('Predefined images are not available.');
     }
 
-    const form = new FormData();
-    form.append('image', fs.createReadStream(profilePicPath));
+    // === Step 1: Update Profile Picture ===
+    const profileForm = new FormData();
+    profileForm.append('image', fs.createReadStream(profilePicPath));
 
-    const request_data = {
+    const profileRequestData = {
       url: 'https://api.twitter.com/1.1/account/update_profile_image.json',
       method: 'POST'
     };
     
-    const headers = oauth.toHeader(oauth.authorize(request_data, {
+    const profileHeaders = oauth.toHeader(oauth.authorize(profileRequestData, {
       key: req.session.access_token,
       secret: req.session.access_token_secret
     }));
 
-    Object.assign(headers, form.getHeaders());
+    Object.assign(profileHeaders, profileForm.getHeaders());
 
-    await axios.post(request_data.url, form, { headers });
+    await axios.post(profileRequestData.url, profileForm, { headers: profileHeaders });
 
-    res.send('<h1>Profile Updated Successfully!</h1>');
+
+    // === Step 2: Update Banner Image ===
+    const bannerImage = fs.readFileSync(bannerPath); // Read the file as a buffer
+
+    const bannerRequestData = {
+      url: 'https://api.twitter.com/1.1/account/update_profile_banner.json',
+      method: 'POST'
+    };
+
+    const bannerHeaders = oauth.toHeader(oauth.authorize(bannerRequestData, {
+      key: req.session.access_token,
+      secret: req.session.access_token_secret
+    }));
+
+    // Set content type for raw binary data
+    bannerHeaders['Content-Type'] = 'application/octet-stream';
+
+    // Send the request with raw image data
+    await axios.post(bannerRequestData.url, bannerImage, { headers: bannerHeaders });
+
+
+    // === Success Response ===
+    res.send('<h1>Profile and Banner Updated Successfully!</h1>');
+
   } catch (error) {
-    res.status(500).send('Error updating profile.');
+    res.status(500).send('Error updating profile or banner.');
   }
 });
-
 app.listen(PORT, () => console.log(`Server running on port ${PORT}`));
 
