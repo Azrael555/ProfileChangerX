@@ -123,8 +123,7 @@ app.get('/update-profile', async (req, res) => {
   } catch (error) {
     res.status(500).send('Error updating profile.');
   }
-    
-
 });
 
 app.listen(PORT, () => console.log(`Server running on port ${PORT}`));
+
