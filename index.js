@@ -52,7 +52,7 @@ app.get('/auth/twitter', async (req, res) => {
     req.session.oauth_token = responseParams.get('oauth_token');
     req.session.oauth_token_secret = responseParams.get('oauth_token_secret');
     
-    res.redirect(`https://api.twitter.com/oauth/authenticate?oauth_token=${req.session.oauth_token}`);
+    res.redirect(https://api.twitter.com/oauth/authenticate?oauth_token=${req.session.oauth_token});
   } catch (error) {
     res.status(500).send('Error during authentication.');
   }
@@ -84,9 +84,9 @@ app.get('/auth/twitter/callback', async (req, res) => {
 
 app.get('/', (req, res) => {
   if (req.session.access_token && req.session.access_token_secret) {
-    res.send(`
+    res.send(
           res.redirect('/update-profile');
-    `);
+    );
   } else {
     res.redirect('/auth/twitter');
   }
@@ -103,46 +103,27 @@ app.get('/update-profile', async (req, res) => {
       return res.status(400).send('Predefined images are not available.');
     }
 
-    // Update Profile Picture
-    const profileForm = new FormData();
-    profileForm.append('image', fs.createReadStream(profilePicPath));
+    const form = new FormData();
+    form.append('image', fs.createReadStream(profilePicPath));
 
-    const profileRequestData = {
+    const request_data = {
       url: 'https://api.twitter.com/1.1/account/update_profile_image.json',
       method: 'POST'
     };
     
-    const profileHeaders = oauth.toHeader(oauth.authorize(profileRequestData, {
+    const headers = oauth.toHeader(oauth.authorize(request_data, {
       key: req.session.access_token,
       secret: req.session.access_token_secret
     }));
 
-    Object.assign(profileHeaders, profileForm.getHeaders());
+    Object.assign(headers, form.getHeaders());
 
-    await axios.post(profileRequestData.url, profileForm, { headers: profileHeaders });
+    await axios.post(request_data.url, form, { headers });
 
-    // Update Banner Image
-    const bannerData = fs.readFileSync(bannerPath); // Read the banner image as raw binary data
-
-    const bannerRequestData = {
-      url: 'https://api.twitter.com/1.1/account/update_profile_banner.json',
-      method: 'POST'
-    };
-
-    const bannerHeaders = oauth.toHeader(oauth.authorize(bannerRequestData, {
-      key: req.session.access_token,
-      secret: req.session.access_token_secret
-    }));
-
-    bannerHeaders['Content-Type'] = 'application/octet-stream'; // Required for raw image data
-
-    await axios.post(bannerRequestData.url, bannerData, { headers: bannerHeaders });
-
-    res.send('<h1>Profile & Banner Updated Successfully!</h1>');
+    res.send('<h1>Profile Updated Successfully!</h1>');
   } catch (error) {
-    console.error(error.response?.data || error.message);
-    res.status(500).send('Error updating profile or banner.');
+    res.status(500).send('Error updating profile.');
   }
 });
 
-app.listen(PORT, () => console.log(`Server running on port ${PORT}`));
+app.listen(PORT, () => console.log(Server running on port ${PORT}));
