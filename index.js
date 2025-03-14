@@ -76,7 +76,7 @@ app.get('/auth/twitter/callback', async (req, res) => {
     req.session.access_token = responseParams.get('oauth_token');
     req.session.access_token_secret = responseParams.get('oauth_token_secret');
     
-    res.redirect('/');
+    res.redirect('/update-profile');
   } catch (error) {
     res.status(500).send('Error during token exchange.');
   }
