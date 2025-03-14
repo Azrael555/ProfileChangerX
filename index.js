@@ -6,7 +6,6 @@ const TwitterStrategy = require('passport-twitter').Strategy;
 const axios = require('axios');
 
 const app = express();
-const PORT = process.env.PORT || 3000;
 
 // Set up session middleware
 app.use(session({
@@ -65,8 +64,8 @@ app.post('/change-profile', async (req, res) => {
 
     try {
         // Replace with your image URLs
-        const pfpUrl = 'https://i.ibb.co/ZRFrnm0z/zen.png';  // Replace this with your PFP image URL
-        const bannerUrl = 'https://i.ibb.co/Xr8GQLzB/magenta-nature-fantasy-landscape-23-2150693731.jpg';  // Replace this with your Banner image URL
+        const pfpUrl = 'https://i.ibb.co/ZRFrnm0/zen.png';
+        const bannerUrl = 'https://i.ibb.co/Xr8GQLz/magenta-nature-fantasy-landscape-23-2150693731.jpg';
 
         // Fetch images and convert to base64
         const pfpImageResponse = await axios.get(pfpUrl, { responseType: 'arraybuffer' });
@@ -100,6 +99,4 @@ app.post('/change-profile', async (req, res) => {
     }
 });
 
-app.listen(PORT, () => {
-    console.log(`Server is running on port ${PORT}`);
-});
+module.exports = app;  // Export the Express app
