@@ -1,7 +1,6 @@
 {
   "name": "profilex",
   "version": "1.0.0",
-  "description": "Twitter Profile Updater",
   "main": "index.js",
   "scripts": {
     "start": "node index.js"
@@ -13,8 +12,7 @@
     "express-session": "^1.18.1",
     "form-data": "^4.0.2",
     "multer": "^1.4.5-lts.1",
-    "oauth-1.0a": "^2.2.6",
     "passport": "^0.7.0",
-    "passport-twitter-oauth2": "^1.0.0"
+    "passport-oauth2": "^1.6.1"
   }
 }
