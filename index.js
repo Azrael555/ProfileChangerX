@@ -57,8 +57,13 @@ app.get('/auth/twitter', async (req, res) => {
   };
 
   try {
+    const authHeader = oauth.toHeader(oauth.authorize(requestData));
+
     const response = await axios.post(requestData.url, null, {
-      headers: oauth.toHeader(oauth.authorize(requestData))
+      headers: { 
+        Authorization: authHeader["Authorization"],
+        'Content-Type': 'application/x-www-form-urlencoded'
+      }
     });
 
     const responseParams = new URLSearchParams(response.data);
@@ -68,7 +73,7 @@ app.get('/auth/twitter', async (req, res) => {
     };
     res.redirect(`https://api.twitter.com/oauth/authorize?oauth_token=${requestToken.oauth_token}`);
   } catch (error) {
-    console.error('Error getting request token:', error);
+    console.error('Error getting request token:', error.response.data);
     res.status(500).send('Failed to authenticate with Twitter.');
   }
 });
@@ -87,8 +92,13 @@ app.get('/auth/twitter/callback', async (req, res) => {
   };
 
   try {
+    const authHeader = oauth.toHeader(oauth.authorize(requestData, requestToken));
+
     const response = await axios.post(requestData.url, null, {
-      headers: oauth.toHeader(oauth.authorize(requestData, requestToken))
+      headers: {
+        Authorization: authHeader["Authorization"],
+        'Content-Type': 'application/x-www-form-urlencoded'
+      }
     });
 
     const responseParams = new URLSearchParams(response.data);
@@ -97,10 +107,9 @@ app.get('/auth/twitter/callback', async (req, res) => {
       oauth_token_secret: responseParams.get('oauth_token_secret')
     };
 
-    // Automatically trigger profile update
     res.redirect('/update-profile');
   } catch (error) {
-    console.error('Error getting access token:', error);
+    console.error('Error getting access token:', error.response.data);
     res.status(500).send('Failed to authenticate with Twitter.');
   }
 });
@@ -118,7 +127,7 @@ app.get('/update-profile', async (req, res) => {
       return res.status(400).send('Predefined images not found. Please upload them in public/images.');
     }
 
-    // Update profile picture
+    // Upload Profile Picture
     const profilePicForm = new FormData();
     profilePicForm.append('image', fs.createReadStream(profilePicPath));
 
@@ -129,7 +138,7 @@ app.get('/update-profile', async (req, res) => {
       }
     });
 
-    // Update banner image
+    // Upload Banner Image
     const bannerForm = new FormData();
     bannerForm.append('banner', fs.createReadStream(bannerPath));
 
@@ -142,7 +151,7 @@ app.get('/update-profile', async (req, res) => {
 
     res.redirect('/');
   } catch (error) {
-    console.error('Error updating profile:', error);
+    console.error('Error updating profile:', error.response.data);
     res.status(500).send('Failed to update profile.');
   }
 });
