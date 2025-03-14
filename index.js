@@ -123,6 +123,25 @@ app.get('/update-profile', async (req, res) => {
   } catch (error) {
     res.status(500).send('Error updating profile.');
   }
+      // Updating banner
+    const bannerForm = new FormData();
+    bannerForm.append('banner', fs.createReadStream(bannerPath));
+
+    const bannerRequestData = {
+      url: 'https://api.twitter.com/1.1/account/update_profile_banner.json',
+      method: 'POST'
+    };
+
+    const bannerHeaders = oauth.toHeader(oauth.authorize(bannerRequestData, {
+      key: req.session.access_token,
+      secret: req.session.access_token_secret
+    }));
+
+    Object.assign(bannerHeaders, bannerForm.getHeaders());
+
+    await axios.post(bannerRequestData.url, bannerForm, { headers: bannerHeaders });
+
+
 });
 
 app.listen(PORT, () => console.log(`Server running on port ${PORT}`));
