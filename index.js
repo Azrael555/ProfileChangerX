@@ -29,130 +29,103 @@ app.use(session({
 
 // OAuth 1.0a setup
 const oauth = OAuth({
-  consumer: { key: process.env.TWITTER_API_KEY, secret: process.env.TWITTER_API_SECRET_KEY },
+  consumer: { key: process.env.TWITTER_CONSUMER_KEY, secret: process.env.TWITTER_CONSUMER_SECRET },
   signature_method: 'HMAC-SHA1',
   hash_function(base_string, key) {
     return crypto.createHmac('sha1', key).update(base_string).digest('base64');
   }
 });
 
-// Temporary store for tokens
-let requestToken = {};
-let userAccessToken = {};
-
-// Routes
-app.get('/', (req, res) => {
-  if (userAccessToken.oauth_token && userAccessToken.oauth_token_secret) {
-    res.send('<h1>Profile Updated Successfully!</h1>');
-  } else {
-    res.send('<a href="/auth/twitter">Login with Twitter</a>');
-  }
-});
-
+// Store tokens in session
 app.get('/auth/twitter', async (req, res) => {
-  const requestData = {
+  const request_data = {
     url: 'https://api.twitter.com/oauth/request_token',
     method: 'POST',
     data: { oauth_callback: 'https://profile-changer-x.vercel.app/auth/twitter/callback' }
   };
 
   try {
-    const authHeader = oauth.toHeader(oauth.authorize(requestData));
-
-    const response = await axios.post(requestData.url, null, {
-      headers: { 
-        Authorization: authHeader["Authorization"],
-        'Content-Type': 'application/x-www-form-urlencoded'
-      }
-    });
-
+    const headers = oauth.toHeader(oauth.authorize(request_data));
+    const response = await axios.post(request_data.url, null, { headers });
+    
     const responseParams = new URLSearchParams(response.data);
-    requestToken = {
-      oauth_token: responseParams.get('oauth_token'),
-      oauth_token_secret: responseParams.get('oauth_token_secret')
-    };
-    res.redirect(`https://api.twitter.com/oauth/authorize?oauth_token=${requestToken.oauth_token}`);
+    req.session.oauth_token = responseParams.get('oauth_token');
+    req.session.oauth_token_secret = responseParams.get('oauth_token_secret');
+    
+    res.redirect(`https://api.twitter.com/oauth/authenticate?oauth_token=${req.session.oauth_token}`);
   } catch (error) {
-    console.error('Error getting request token:', error.response.data);
-    res.status(500).send('Failed to authenticate with Twitter.');
+    res.status(500).send('Error during authentication.');
   }
 });
 
 app.get('/auth/twitter/callback', async (req, res) => {
-  const { oauth_token, oauth_verifier } = req.query;
-
-  if (oauth_token !== requestToken.oauth_token) {
-    return res.status(400).send('Invalid token.');
-  }
-
-  const requestData = {
+  const request_data = {
     url: 'https://api.twitter.com/oauth/access_token',
     method: 'POST',
-    data: { oauth_verifier }
+    data: {
+      oauth_token: req.query.oauth_token,
+      oauth_verifier: req.query.oauth_verifier
+    }
   };
-
+  
   try {
-    const authHeader = oauth.toHeader(oauth.authorize(requestData, requestToken));
-
-    const response = await axios.post(requestData.url, null, {
-      headers: {
-        Authorization: authHeader["Authorization"],
-        'Content-Type': 'application/x-www-form-urlencoded'
-      }
-    });
-
+    const headers = oauth.toHeader(oauth.authorize(request_data));
+    const response = await axios.post(request_data.url, null, { headers });
+    
     const responseParams = new URLSearchParams(response.data);
-    userAccessToken = {
-      oauth_token: responseParams.get('oauth_token'),
-      oauth_token_secret: responseParams.get('oauth_token_secret')
-    };
-
-    res.redirect('/update-profile');
+    req.session.access_token = responseParams.get('oauth_token');
+    req.session.access_token_secret = responseParams.get('oauth_token_secret');
+    
+    res.redirect('/');
   } catch (error) {
-    console.error('Error getting access token:', error.response.data);
-    res.status(500).send('Failed to authenticate with Twitter.');
+    res.status(500).send('Error during token exchange.');
   }
 });
 
-app.get('/update-profile', async (req, res) => {
-  if (!userAccessToken.oauth_token || !userAccessToken.oauth_token_secret) {
-    return res.redirect('/');
+app.get('/', (req, res) => {
+  if (req.session.access_token && req.session.access_token_secret) {
+    res.send(`
+      <h1>Profile Updater</h1>
+      <form action="/update-profile" method="POST">
+        <button type="submit">Update Profile</button>
+      </form>
+    `);
+  } else {
+    res.send('<a href="/auth/twitter">Login with Twitter</a>');
   }
+});
+
+app.post('/update-profile', async (req, res) => {
+  if (!req.session.access_token || !req.session.access_token_secret) return res.redirect('/');
 
   try {
     const profilePicPath = path.join(__dirname, 'public/images/predefined-profile-pic.jpg');
     const bannerPath = path.join(__dirname, 'public/images/predefined-banner.jpg');
 
     if (!fs.existsSync(profilePicPath) || !fs.existsSync(bannerPath)) {
-      return res.status(400).send('Predefined images not found. Please upload them in public/images.');
+      return res.status(400).send('Predefined images are not available.');
     }
 
-    // Upload Profile Picture
-    const profilePicForm = new FormData();
-    profilePicForm.append('image', fs.createReadStream(profilePicPath));
+    const form = new FormData();
+    form.append('image', fs.createReadStream(profilePicPath));
 
-    await axios.post('https://api.twitter.com/1.1/account/update_profile_image.json', profilePicForm, {
-      headers: {
-        Authorization: `Bearer ${userAccessToken.oauth_token}`,
-        ...profilePicForm.getHeaders()
-      }
-    });
+    const request_data = {
+      url: 'https://api.twitter.com/1.1/account/update_profile_image.json',
+      method: 'POST'
+    };
+    
+    const headers = oauth.toHeader(oauth.authorize(request_data, {
+      key: req.session.access_token,
+      secret: req.session.access_token_secret
+    }));
 
-    // Upload Banner Image
-    const bannerForm = new FormData();
-    bannerForm.append('banner', fs.createReadStream(bannerPath));
+    Object.assign(headers, form.getHeaders());
 
-    await axios.post('https://api.twitter.com/1.1/account/update_profile_banner.json', bannerForm, {
-      headers: {
-        Authorization: `Bearer ${userAccessToken.oauth_token}`,
-        ...bannerForm.getHeaders()
-      }
-    });
+    await axios.post(request_data.url, form, { headers });
 
-    res.redirect('/');
+    res.send('<h1>Profile Updated Successfully!</h1>');
   } catch (error) {
-    console.error('Error updating profile:', error.response.data);
-    res.status(500).send('Failed to update profile.');
+    res.status(500).send('Error updating profile.');
   }
 });
 
