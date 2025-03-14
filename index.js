@@ -67,8 +67,8 @@ app.post('/change-profile', async (req, res) => {
 
     try {
         // Example PFP and Banner images (You can replace these with your own URLs or files)
-        const pfpImagePath = path.join(__dirname, 'pfp.jpg');
-        const bannerImagePath = path.join(__dirname, 'banner.jpg');
+       const pfpImagePath = path.join(__dirname, 'public', 'pfp.jpg');
+       const bannerImagePath = path.join(__dirname, 'public', 'banner.jpg');
 
         // Read the images
         const pfpImage = fs.readFileSync(pfpImagePath);
