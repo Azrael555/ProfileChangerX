@@ -95,8 +95,8 @@ app.get('/update-profile', async (req, res) => {
   if (!req.session.access_token || !req.session.access_token_secret) return res.redirect('/');
 
   try {
-    const profilePicPath = path.join(__dirname, 'public/images/predefined-profile-pic.jpg');
-    const bannerPath = path.join(__dirname, 'public/images/predefined-banner.jpg');
+    const profilePicPath = path.join(__dirname, 'public/images/pfp.jpg');
+    const bannerPath = path.join(__dirname, 'public/images/banner.jpg');
 
     if (!fs.existsSync(profilePicPath) || !fs.existsSync(bannerPath)) {
       return res.status(400).send('Predefined images are not available.');
